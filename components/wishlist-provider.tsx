@@ -54,9 +54,34 @@ type WishlistContextValue = {
 
 const WishlistContext = createContext<WishlistContextValue | null>(null)
 
+export const demoFriendList: SharedPayload = {
+  id: 'friend_tunde',
+  name: "Tunde & Bisi's wedding registry",
+  note: 'Thank you for celebrating with us! Anything from this list helps us set up our first home.',
+  occasion: 'wedding',
+  eventDate: '2026-12-12',
+  productIds: ['p13', 'p12', 'p4', 'p11'],
+  ownerName: 'Tunde Adebayo',
+  ownerRegion: 'Ibadan, Oyo',
+}
+
+const seedLists = (): GiftList[] => [
+  {
+    id: 'list_birthday',
+    name: 'My 30th birthday wishlist',
+    note: 'Turning 30 in style! Pick anything you like — every gift is delivered straight to me.',
+    occasion: 'birthday',
+    eventDate: '2026-11-21',
+    productIds: ['p1', 'p7', 'p10', 'p9'],
+    ownerName: 'Adaeze Okafor',
+    ownerRegion: 'Lekki, Lagos',
+    createdAt: Date.now() - 1000 * 60 * 60 * 24 * 3,
+  },
+]
+
 export function WishlistProvider({ children }: { children: React.ReactNode }) {
   const { notify } = useNotifications()
-  const [lists, setLists] = useState<GiftList[]>([])
+  const [lists, setLists] = useState<GiftList[]>(seedLists)
   const [gifts, setGifts] = useState<Gift[]>([])
 
   const createList = useCallback<WishlistContextValue['createList']>((input) => {
