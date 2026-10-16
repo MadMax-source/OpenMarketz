@@ -28,12 +28,15 @@ export function SiteHeader() {
             {'Free delivery on orders over ₦50,000 · Pay securely with buyer protection'}
           </p>
           <div className="flex items-center gap-5 text-background/80">
-            <Link href="#" className="transition-colors hover:text-background">
+            <Link href="/support" className="transition-colors hover:text-background">
               Help center
             </Link>
-            <Link href="/sell" className="flex items-center gap-1.5 transition-colors hover:text-background">
+            <Link href="/open-market" className="transition-colors hover:text-background">
+              Open Market
+            </Link>
+            <Link href="/seller" className="flex items-center gap-1.5 transition-colors hover:text-background">
               <Store className="size-3.5" />
-              Sell on OpenMarketz
+              Seller hub
             </Link>
           </div>
         </div>

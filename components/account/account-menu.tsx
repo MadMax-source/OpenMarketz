@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Bell, Heart, LogOut, MapPin, MessageCircle, Package, ShieldCheck, Store, User as UserIcon } from 'lucide-react'
+import { Bell, Heart, LayoutDashboard, LifeBuoy, LogOut, MapPin, MessageCircle, Package, ShieldCheck, Store, User as UserIcon } from 'lucide-react'
 import { initialsOf, useAuth } from '@/components/auth-provider'
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -56,19 +56,23 @@ export function AccountMenu() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         {items.map(({ href, label, icon: Icon }) => (
-          <DropdownMenuItem key={href} asChild>
-            <Link href={href}>
-              <Icon className="size-4" aria-hidden="true" />
-              {label}
-            </Link>
+          <DropdownMenuItem key={href} render={<Link href={href} />}>
+            <Icon className="size-4" aria-hidden="true" />
+            {label}
           </DropdownMenuItem>
         ))}
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link href="/sell">
-            <Store className="size-4" aria-hidden="true" />
-            {user.seller ? 'Seller application' : 'Become a seller'}
-          </Link>
+        <DropdownMenuItem render={<Link href="/seller" />}>
+          <LayoutDashboard className="size-4" aria-hidden="true" />
+          Seller hub
+        </DropdownMenuItem>
+        <DropdownMenuItem render={<Link href="/sell" />}>
+          <Store className="size-4" aria-hidden="true" />
+          {user.seller ? 'Seller application' : 'Become a seller'}
+        </DropdownMenuItem>
+        <DropdownMenuItem render={<Link href="/support" />}>
+          <LifeBuoy className="size-4" aria-hidden="true" />
+          Help & support
         </DropdownMenuItem>
         <DropdownMenuItem
           onSelect={() => {

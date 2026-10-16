@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { Send } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -18,7 +18,8 @@ function replyFor(text: string) {
   return 'Thanks for the details. A member of our team will look into this now — you can also reach us on WhatsApp for faster replies.'
 }
 
-export function LiveChat() {
+export function LiveChat({ className, compact = false }: { className?: string; compact?: boolean }) {
+  const inputId = useId()
   const [messages, setMessages] = useState<Msg[]>([
     { id: 0, from: 'agent', text: 'Hi, I’m Amaka from OpenMarketz support. How can I help you today?' },
   ])
@@ -43,14 +44,14 @@ export function LiveChat() {
   }
 
   return (
-    <section aria-labelledby="live-chat" className="flex h-[560px] flex-col overflow-hidden rounded-3xl border bg-card">
-      <header className="flex items-center gap-3 border-b p-4">
+    <section aria-label="Live chat with support" className={cn('flex h-[560px] flex-col overflow-hidden rounded-3xl border bg-card', className)}>
+      <header className={cn('flex items-center gap-3 border-b p-4', compact && 'hidden')}>
         <span className="relative size-11 shrink-0">
           <Image src="/images/support-agent.png" alt="" fill sizes="44px" className="rounded-full object-cover" />
           <span className="absolute bottom-0 right-0 size-3 rounded-full border-2 border-card bg-primary" aria-hidden="true" />
         </span>
         <div>
-          <h2 id="live-chat" className="font-semibold">Live chat</h2>
+          <h2 className="font-semibold">Live chat</h2>
           <p className="text-xs text-muted-foreground">Amaka · Online · replies in ~2 min</p>
         </div>
       </header>
@@ -74,9 +75,9 @@ export function LiveChat() {
         ))}
       </div>
       <form onSubmit={(e) => { e.preventDefault(); send(draft) }} className="flex gap-2 border-t p-3">
-        <label htmlFor="chat-input" className="sr-only">Type your message</label>
+        <label htmlFor={inputId} className="sr-only">Type your message</label>
         <input
-          id="chat-input"
+          id={inputId}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => {
