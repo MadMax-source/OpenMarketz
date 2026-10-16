@@ -8,6 +8,9 @@ import { AuthProvider } from '@/components/auth-provider'
 import { NotificationsProvider } from '@/components/notifications-provider'
 import { WishlistProvider } from '@/components/wishlist-provider'
 import { Toaster } from '@/components/ui/sonner'
+import { OpenMarketProvider } from '@/components/open-market/open-market-provider'
+import { SellerProvider } from '@/components/seller/seller-provider'
+import { SupportWidget } from '@/components/support/support-widget'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
@@ -48,10 +51,15 @@ export default function RootLayout({
           <AuthProvider>
             <ShopProvider>
               <WishlistProvider>
-                <SiteHeader />
-                <main className="flex-1">{children}</main>
-                <SiteFooter />
-                <Toaster position="bottom-right" />
+                <OpenMarketProvider>
+                  <SellerProvider>
+                    <SiteHeader />
+                    <main className="flex-1">{children}</main>
+                    <SiteFooter />
+                    <SupportWidget />
+                    <Toaster position="top-center" />
+                  </SellerProvider>
+                </OpenMarketProvider>
               </WishlistProvider>
             </ShopProvider>
           </AuthProvider>
