@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Suspense } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { Heart, Menu, ShoppingBag, Store, User } from 'lucide-react'
+import { HandCoins, Heart, Menu, MessageCircle, Package, ShoppingBag, Store } from 'lucide-react'
 import { categories } from '@/lib/data'
 import { useShop } from '@/components/shop-provider'
 import { SearchBar } from '@/components/search-bar'
@@ -14,7 +14,8 @@ import { cn } from '@/lib/utils'
 
 export function SiteHeader() {
   const pathname = usePathname()
-  const { cartCount, wishlist } = useShop()
+  const { cartCount, wishlist, offers, conversations } = useShop()
+  const unread = conversations.reduce((sum, c) => sum + c.unread, 0)
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background/85 backdrop-blur-xl">
@@ -29,7 +30,7 @@ export function SiteHeader() {
             </Link>
             <Link href="#" className="flex items-center gap-1.5 transition-colors hover:text-background">
               <Store className="size-3.5" />
-              Sell on Kasuwa
+              Sell on OpenMarketz
             </Link>
           </div>
         </div>
@@ -77,16 +78,22 @@ export function SiteHeader() {
 
         <div className="ml-auto flex items-center gap-1">
           <Link
-            href="#"
+            href="/orders"
             className="hidden items-center gap-2 rounded-full px-3 py-2 text-sm hover:bg-muted sm:flex"
           >
-            <User className="size-5" />
-            <span className="hidden lg:inline">Sign in</span>
+            <Package className="size-5" />
+            <span className="hidden lg:inline">Orders</span>
           </Link>
+          <HeaderIcon href="/offers" label="My offers" count={offers.filter((o) => o.status === 'pending').length}>
+            <HandCoins className="size-5" />
+          </HeaderIcon>
+          <HeaderIcon href="/messages" label="Messages" count={unread}>
+            <MessageCircle className="size-5" />
+          </HeaderIcon>
           <HeaderIcon href="#" label="Wishlist" count={wishlist.size}>
             <Heart className="size-5" />
           </HeaderIcon>
-          <HeaderIcon href="#" label="Cart" count={cartCount}>
+          <HeaderIcon href="/cart" label="Cart" count={cartCount}>
             <ShoppingBag className="size-5" />
           </HeaderIcon>
         </div>

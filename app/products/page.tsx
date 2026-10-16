@@ -5,7 +5,7 @@ import { PageIntro } from '@/components/listing/page-intro'
 
 export const metadata: Metadata = {
   title: 'All products',
-  description: 'Browse every product from verified sellers on Kasuwa.',
+  description: 'Browse every product from verified sellers on OpenMarketz.',
 }
 
 export default function ProductsPage() {

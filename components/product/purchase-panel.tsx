@@ -2,26 +2,40 @@
 
 import { useState } from 'react'
 import { motion } from 'motion/react'
-import { Check, Heart, Minus, Plus, RotateCcw, ShieldCheck, Truck } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { BadgeCheck, Boxes, Check, Heart, Minus, Phone, Plus, RotateCcw, ShieldCheck, Truck } from 'lucide-react'
 import { toast } from 'sonner'
 import { discount, formatPrice, type Product } from '@/lib/data'
 import { useShop } from '@/components/shop-provider'
+import { BargainDialog } from '@/components/product/bargain-dialog'
+import { ChatSheet } from '@/components/chat/chat-sheet'
 import { Rating } from '@/components/rating'
 import { cn } from '@/lib/utils'
 
 export function PurchasePanel({ product }: { product: Product }) {
-  const { addToCart, toggleWishlist, wishlist } = useShop()
+  const { addToCart, toggleWishlist, wishlist, acceptedOfferFor } = useShop()
+  const router = useRouter()
   const [quantity, setQuantity] = useState(1)
   const [selected, setSelected] = useState<Record<string, string>>(() =>
     Object.fromEntries((product.variants ?? []).map((v) => [v.name, v.options[Math.min(1, v.options.length - 1)]])),
   )
+  const accepted = acceptedOfferFor(product.id)
   const off = discount(product)
   const saved = wishlist.has(product.id)
   const lowStock = product.stock <= 10
+  const unitWord = product.unitLabel ?? 'units'
 
   return (
     <div className="flex flex-col">
-      <p className="text-sm font-medium text-primary">{product.brand}</p>
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="text-sm font-medium text-primary">{product.brand}</p>
+        {product.condition && (
+          <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium">{product.condition}</span>
+        )}
+        {product.negotiable && (
+          <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">Negotiable</span>
+        )}
+      </div>
       <h1 className="mt-2 font-display text-3xl font-semibold leading-tight tracking-tight text-balance md:text-4xl">
         {product.name}
       </h1>
@@ -31,6 +45,18 @@ export function PurchasePanel({ product }: { product: Product }) {
         <span>{`${product.sold.toLocaleString()} sold`}</span>
       </div>
 
+      {accepted ? (
+        <div className="mt-6 rounded-2xl border border-primary/30 bg-primary/5 p-4">
+          <p className="flex items-center gap-1.5 text-xs font-medium text-primary">
+            <BadgeCheck className="size-4" aria-hidden="true" />
+            Your offer was accepted — this is your price
+          </p>
+          <div className="mt-1.5 flex flex-wrap items-baseline gap-3">
+            <span className="font-display text-3xl font-semibold tracking-tight">{formatPrice(accepted.offerPrice)}</span>
+            <span className="text-lg text-muted-foreground line-through">{formatPrice(product.price)}</span>
+          </div>
+        </div>
+      ) : (
       <div className="mt-6 flex flex-wrap items-baseline gap-3">
         <span className="font-display text-3xl font-semibold tracking-tight">{formatPrice(product.price)}</span>
         {product.compareAt && (
@@ -41,6 +67,26 @@ export function PurchasePanel({ product }: { product: Product }) {
             </span>
           </>
         )}
+      </div>
+      )}
+
+      <div className="mt-5 flex items-center gap-4 rounded-2xl border p-4">
+        <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-muted">
+          <Boxes className="size-5 text-primary" aria-hidden="true" />
+        </div>
+        <div className="flex-1">
+          <p className="text-sm">
+            <span className="font-display text-xl font-semibold tabular-nums">{product.stock}</span>
+            <span className="text-muted-foreground">{` ${unitWord} available`}</span>
+          </p>
+          <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden="true">
+            <div
+              className={cn('h-full rounded-full', lowStock ? 'bg-deal' : 'bg-primary')}
+              style={{ width: `${Math.min(100, Math.max(8, (product.stock / (product.stock + Math.min(product.sold, 200))) * 100))}%` }}
+            />
+          </div>
+        </div>
+        {lowStock && <span className="text-xs font-medium text-deal">Selling fast</span>}
       </div>
 
       <p className="mt-5 leading-relaxed text-muted-foreground text-pretty">{product.description}</p>
@@ -107,7 +153,7 @@ export function PurchasePanel({ product }: { product: Product }) {
         <motion.button
           type="button"
           whileTap={{ scale: 0.98 }}
-          onClick={() => addToCart(product, quantity)}
+          onClick={() => addToCart(product, quantity, selected)}
           className="h-12 flex-1 rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
         >
           Add to cart
@@ -125,15 +171,37 @@ export function PurchasePanel({ product }: { product: Product }) {
       </div>
       <button
         type="button"
-        onClick={() => toast('Checkout is coming in the next phase', { description: 'Your item is ready in the cart.' })}
+        onClick={() => {
+          addToCart(product, quantity, selected)
+          router.push('/cart')
+        }}
         className="mt-3 h-12 rounded-full bg-foreground text-sm font-medium text-background transition-opacity hover:opacity-90"
       >
         Buy now
       </button>
 
+      <div className="mt-3 flex flex-wrap gap-3">
+        {product.negotiable && !accepted && <BargainDialog product={product} quantity={quantity} />}
+        <ChatSheet
+          product={product}
+          className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors hover:bg-muted"
+        />
+        <button
+          type="button"
+          onClick={() => toast('Calling sellers is coming soon', { description: 'Use chat to reach the seller for now.' })}
+          className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors hover:bg-muted"
+        >
+          <Phone className="size-4" aria-hidden="true" />
+          Call seller
+          <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+            Soon
+          </span>
+        </button>
+      </div>
+
       <p className={cn('mt-4 flex items-center gap-2 text-sm', lowStock ? 'text-deal' : 'text-muted-foreground')}>
         <span className={cn('size-2 rounded-full', lowStock ? 'bg-deal' : 'bg-primary')} aria-hidden="true" />
-        {lowStock ? `Only ${product.stock} left in stock` : 'In stock, ready to ship'}
+        {lowStock ? `Only ${product.stock} ${unitWord} left` : 'In stock, ready to ship'}
       </p>
 
       <ul className="mt-8 flex flex-col divide-y rounded-2xl border">

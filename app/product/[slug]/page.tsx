@@ -6,6 +6,7 @@ import { ProductGallery } from '@/components/product/product-gallery'
 import { PurchasePanel } from '@/components/product/purchase-panel'
 import { SellerCard } from '@/components/product/seller-card'
 import { ProductDetails } from '@/components/product/product-details'
+import { ProductFeatures } from '@/components/product/product-features'
 import { ProductCard } from '@/components/product-card'
 import { SectionHeading } from '@/components/section-heading'
 
@@ -40,9 +41,13 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
       <div className="mt-6 grid gap-10 lg:grid-cols-2 lg:gap-14">
         <div className="lg:sticky lg:top-40 lg:self-start">
-          <ProductGallery images={product.gallery} name={product.name} />
+          <ProductGallery images={product.gallery} name={product.name} video={product.video} />
         </div>
         <PurchasePanel product={product} />
+      </div>
+
+      <div className="mt-16">
+        <ProductFeatures product={product} />
       </div>
 
       {seller && (

@@ -43,12 +43,12 @@ export default async function StorePage({ params }: { params: Promise<{ slug: st
               <div className="rounded-2xl bg-secondary p-5">
                 <ShieldCheck className="size-6 text-primary" aria-hidden="true" />
                 <p className="mt-3 font-medium">
-                  {seller.verified ? 'Verified by Kasuwa' : 'Verification in progress'}
+                  {seller.verified ? 'Verified by OpenMarketz' : 'Verification in progress'}
                 </p>
                 <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
                   {seller.verified
                     ? 'This seller passed ID, business registration and address checks. Every order is covered by buyer protection.'
-                    : 'Orders from this seller are still fully covered by Kasuwa buyer protection and escrow payments.'}
+                    : 'Orders from this seller are still fully covered by OpenMarketz buyer protection and escrow payments.'}
                 </p>
               </div>
             </div>

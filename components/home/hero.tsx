@@ -86,7 +86,7 @@ export function Hero() {
           <div className="relative aspect-[4/3.4] overflow-hidden rounded-2xl">
             <Image
               src="/images/hero.png"
-              alt="A curated selection of products available on Kasuwa"
+              alt="A curated selection of products available on OpenMarketz"
               fill
               priority
               sizes="(min-width: 768px) 50vw, 100vw"

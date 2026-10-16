@@ -9,7 +9,7 @@ const items = [
 
 export function TrustStrip() {
   return (
-    <section className="mx-auto max-w-7xl px-4 pt-14 md:px-6" aria-label="Why shop with Kasuwa">
+    <section className="mx-auto max-w-7xl px-4 pt-14 md:px-6" aria-label="Why shop with OpenMarketz">
       <ul className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border bg-border lg:grid-cols-4">
         {items.map(({ icon: Icon, title, body }) => (
           <li key={title} className="flex flex-col gap-3 bg-background p-5 md:flex-row md:items-start md:gap-4">
