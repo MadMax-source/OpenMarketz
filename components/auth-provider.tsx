@@ -9,6 +9,7 @@ export type SellerApplication = {
   brandName: string
   handle: string
   logoUrl?: string
+  bannerUrl?: string
   description: string
   categories: string[]
   businessType: 'individual' | 'registered'
