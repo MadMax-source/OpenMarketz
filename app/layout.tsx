@@ -12,8 +12,8 @@ const display = Bricolage_Grotesque({ subsets: ['latin'], variable: '--font-disp
 
 export const metadata: Metadata = {
   title: {
-    default: 'Kasuwa — Shop from verified sellers across Nigeria',
-    template: '%s · Kasuwa',
+    default: 'OpenMarketz — Shop from verified sellers across Nigeria',
+    template: '%s · OpenMarketz',
   },
   description:
     'Discover phones, fashion, home essentials and more from verified Nigerian sellers. Secure payments, buyer protection and fast delivery.',

@@ -51,7 +51,7 @@ export function SiteFooter() {
       </div>
       <div className="border-t">
         <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-6 text-xs text-muted-foreground md:flex-row md:items-center md:justify-between md:px-6">
-          <p>{'© 2026 Kasuwa Marketplace Ltd. All rights reserved.'}</p>
+          <p>{'© 2026 OpenMarketz Marketplace Ltd. All rights reserved.'}</p>
           <div className="flex gap-5">
             <Link href="#" className="hover:text-foreground">Privacy</Link>
             <Link href="#" className="hover:text-foreground">Terms</Link>

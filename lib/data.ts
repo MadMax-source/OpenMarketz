@@ -21,6 +21,7 @@ export type Seller = {
   verified: boolean
   responseTime: string
   positiveRate: number
+  phone?: string
 }
 
 export type Product = {
@@ -44,7 +45,14 @@ export type Product = {
   highlights: string[]
   specs: { label: string; value: string }[]
   variants?: { name: string; options: string[] }[]
+  video?: string
+  features?: { title: string; description: string }[]
+  negotiable?: boolean
+  condition?: 'Brand new' | 'Foreign used' | 'Locally used'
+  unitLabel?: string
 }
+
+type BaseProduct = Omit<Product, 'video' | 'features' | 'negotiable'>
 
 export const categories: Category[] = [
   { slug: 'phones', name: 'Phones & Gadgets', image: '/images/cat-phones.png', description: 'Smartphones, audio, wearables and accessories from trusted tech sellers.' },
@@ -95,7 +103,18 @@ export const sellers: Seller[] = [
   },
 ]
 
-export const products: Product[] = [
+const baseProducts: BaseProduct[] = [
+  {
+    id: 'p18', slug: 'corolla-2021-sedan', name: 'Toyota Corolla LE 2021 — Foreign Used', brand: 'Toyota', category: 'automotive', sellerId: 's5',
+    price: 18500000, compareAt: 19800000, rating: 4.8, reviews: 37, sold: 22, stock: 5,
+    image: '/images/p-car.png', gallery: ['/images/p-car.png', '/images/p-car-interior.png'], badge: 'Limited', freeDelivery: false,
+    condition: 'Foreign used', unitLabel: 'cars',
+    description: 'Clean, accident-free 2021 Corolla LE imported from the US with full customs papers. Low mileage, original paint and a fully documented service history. Five identical units available — inspection welcome at our Port Harcourt yard.',
+    highlights: ['Accident-free, original paint', '38,000 km mileage', 'Full customs duty paid', 'Inspection welcome before payment'],
+    specs: [{ label: 'Year', value: '2021' }, { label: 'Mileage', value: '38,000 km' }, { label: 'Engine', value: '1.8L 4-cylinder' }, { label: 'Transmission', value: 'Automatic (CVT)' }, { label: 'Fuel', value: 'Petrol' }, { label: 'Interior', value: 'Fabric, beige' }],
+    variants: [{ name: 'Colour', options: ['Silver', 'Black', 'White'] }],
+  },
+
   {
     id: 'p1', slug: 'aurora-x5-smartphone', name: 'Aurora X5 Smartphone 256GB', brand: 'Aurora', category: 'phones', sellerId: 's1',
     price: 389000, compareAt: 445000, rating: 4.7, reviews: 812, sold: 3400, stock: 24,
@@ -239,6 +258,42 @@ export const products: Product[] = [
     specs: [{ label: 'Resolution', value: '2560 × 1440' }, { label: 'Field of view', value: '140°' }],
   },
 ]
+
+const featureSets: Record<string, Product['features']> = {
+  'corolla-2021-sedan': [
+    { title: 'Toyota Safety Sense', description: 'Pre-collision braking, lane departure alert and adaptive cruise control.' },
+    { title: 'Apple CarPlay & Android Auto', description: '8" touchscreen with wireless phone mirroring and reverse camera.' },
+    { title: 'Fuel efficient', description: 'Around 15 km per litre on mixed city and highway driving.' },
+    { title: 'Verified documents', description: 'Customs papers, plate number and proof of ownership ready for transfer.' },
+  ],
+  'aurora-x5-smartphone': [
+    { title: 'Pro-grade camera', description: 'Triple 50MP system with optical stabilisation and 4K video.' },
+    { title: 'All-day battery', description: '5,000mAh cell that goes from 0 to 70% in 20 minutes.' },
+    { title: 'Smooth display', description: '6.7" 120Hz AMOLED that stays readable in direct sunlight.' },
+  ],
+  'voyager-14-laptop': [
+    { title: 'Featherweight build', description: 'Aluminium unibody at only 1.2kg — easy to carry all day.' },
+    { title: 'Long battery life', description: 'Up to 14 hours of work on a single charge.' },
+    { title: 'Fast storage', description: '1TB NVMe SSD boots in seconds.' },
+  ],
+}
+
+const negotiableCategories = new Set(['automotive', 'computers', 'phones', 'home', 'fashion', 'sports'])
+
+const productsWithVideo = new Set([
+  'ade-ankara-midi-dress', 'aurora-x5-smartphone', 'daily-skincare-kit', 'ember-bluetooth-speaker',
+  'glow-vitamin-c-serum', 'hush-anc-headphones', 'ivy-leather-tote', 'lagos-leather-sneakers',
+  'pulse-smartwatch', 'rattan-table-lamp', 'voyager-14-laptop', 'wireless-desk-set',
+])
+
+export const products: Product[] = baseProducts.map((p) => ({
+  ...p,
+  video: productsWithVideo.has(p.slug) ? `/videos/${p.slug}.mp4` : undefined,
+  negotiable: negotiableCategories.has(p.category),
+  features:
+    featureSets[p.slug] ??
+    p.highlights.map((h) => ({ title: h, description: `${p.brand} ${p.name.split(' ').slice(1, 3).join(' ').toLowerCase()} — ${h.toLowerCase()}.` })),
+}))
 
 export const reviewsSample = [
   { id: 'r1', name: 'Chiamaka O.', rating: 5, date: 'Sep 28, 2026', title: 'Exactly as described', body: 'Arrived in two days, well packaged and genuine. The seller even followed up to make sure everything was fine.', verified: true },
