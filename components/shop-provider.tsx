@@ -2,7 +2,8 @@
 
 import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { getProduct, getSeller, products, type Product } from '@/lib/data'
+import { formatPrice, getProduct, getSeller, products, type Product } from '@/lib/data'
+import { useNotifications } from '@/components/notifications-provider'
 
 export type CartItem = {
   key: string
@@ -26,12 +27,16 @@ export type Offer = {
   createdAt: number
 }
 
+export type MessageStatus = 'sending' | 'sent' | 'delivered' | 'read' | 'failed'
+
 export type ChatMessage = {
   id: string
-  from: 'buyer' | 'seller'
+  from: 'buyer' | 'seller' | 'system'
   text?: string
   voiceNote?: { url: string; duration: number }
+  image?: string
   offerId?: string
+  status?: MessageStatus
   at: number
 }
 
@@ -41,7 +46,10 @@ export type Conversation = {
   productId: string
   messages: ChatMessage[]
   unread: number
+  typing?: boolean
 }
+
+type OutgoingMessage = Pick<ChatMessage, 'text' | 'voiceNote' | 'image'>
 
 export type Address = {
   id: string
@@ -88,10 +96,12 @@ type ShopContextValue = {
   respondToOffer: (offerId: string, status: Exclude<OfferStatus, 'pending'>) => void
   conversations: Conversation[]
   openConversation: (product: Product) => string
-  sendMessage: (conversationId: string, message: Pick<ChatMessage, 'text' | 'voiceNote'>) => void
+  sendMessage: (conversationId: string, message: OutgoingMessage) => void
+  retryMessage: (conversationId: string, messageId: string) => void
   markRead: (conversationId: string) => void
   addresses: Address[]
   saveAddress: (address: Omit<Address, 'id'> & { id?: string }) => Address
+  removeAddress: (id: string) => void
   selectedAddressId: string | null
   setSelectedAddressId: (id: string) => void
   delivery: DeliveryMethod
@@ -132,6 +142,35 @@ const demoAddress: Address = {
   label: 'Home',
 }
 
+function seedConversations(): Conversation[] {
+  const mins = (m: number) => Date.now() - m * 60 * 1000
+  return [
+    {
+      id: 'conv_seed_1',
+      sellerId: 's1',
+      productId: 'p1',
+      unread: 1,
+      messages: [
+        { id: 'm1', from: 'buyer', text: 'Hi, is the Aurora X5 available in Midnight Blue?', status: 'read', at: mins(190) },
+        { id: 'm2', from: 'seller', text: 'Good afternoon! Yes, we have 3 units in Midnight Blue. All come sealed with a 12-month warranty.', at: mins(180) },
+        { id: 'm3', from: 'buyer', text: 'Great. Can you deliver to Lekki by Friday?', status: 'read', at: mins(150) },
+        { id: 'm4', from: 'seller', text: 'Yes, express delivery to Lekki arrives in 1–2 days. Order before 4pm for same-day dispatch.', at: mins(40) },
+      ],
+    },
+    {
+      id: 'conv_seed_2',
+      sellerId: 's2',
+      productId: 'p7',
+      unread: 0,
+      messages: [
+        { id: 'm5', from: 'buyer', text: 'Do you have the Adé dress in size 12?', status: 'read', at: mins(60 * 26) },
+        { id: 'm6', from: 'seller', text: 'We do! It runs true to size. Would you like me to share a fit video?', at: mins(60 * 25) },
+        { id: 'm7', from: 'system', text: 'Ankara House shared their return policy: free exchanges within 7 days.', at: mins(60 * 25) },
+      ],
+    },
+  ]
+}
+
 function seedOrders(): Order[] {
   const p1 = products.find((p) => p.slug === 'hush-anc-headphones')
   const p2 = products.find((p) => p.slug === 'glow-vitamin-c-serum')
@@ -161,7 +200,8 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([])
   const [wishlist, setWishlist] = useState<Set<string>>(new Set())
   const [offers, setOffers] = useState<Offer[]>([])
-  const [conversations, setConversations] = useState<Conversation[]>([])
+  const { notify } = useNotifications()
+  const [conversations, setConversations] = useState<Conversation[]>(seedConversations)
   const [addresses, setAddresses] = useState<Address[]>([demoAddress])
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(demoAddress.id)
   const [delivery, setDelivery] = useState<DeliveryMethod>('standard')
@@ -250,29 +290,73 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
     [conversations],
   )
 
-  const sendMessage = useCallback(
-    (conversationId: string, message: Pick<ChatMessage, 'text' | 'voiceNote'>) => {
-      let target: Conversation | undefined
-      setConversations((prev) =>
-        prev.map((c) => {
-          if (c.id !== conversationId) return c
-          target = c
-          return { ...c, messages: [...c.messages, { ...message, from: 'buyer', id: uid('msg'), at: Date.now() }] }
-        }),
-      )
+  const patchConversation = useCallback((conversationId: string, fn: (c: Conversation) => Conversation) => {
+    setConversations((prev) => prev.map((c) => (c.id === conversationId ? fn(c) : c)))
+  }, [])
+
+  const setStatus = useCallback(
+    (conversationId: string, messageId: string, status: MessageStatus) =>
+      patchConversation(conversationId, (c) => ({
+        ...c,
+        messages: c.messages.map((m) => (m.id === messageId ? { ...m, status } : m)),
+      })),
+    [patchConversation],
+  )
+
+  const deliver = useCallback(
+    (conversationId: string, messageId: string) => {
       window.setTimeout(() => {
-        if (!target) return
-        const reply = sellerReplies[Math.floor(Math.random() * sellerReplies.length)]
-        setConversations((prev) =>
-          prev.map((c) =>
-            c.id === conversationId
-              ? { ...c, messages: [...c.messages, { id: uid('msg'), from: 'seller', text: reply, at: Date.now() }], unread: c.unread + 1 }
-              : c,
-          ),
-        )
-      }, 1600)
+        if (typeof navigator !== 'undefined' && !navigator.onLine) {
+          setStatus(conversationId, messageId, 'failed')
+          return
+        }
+        setStatus(conversationId, messageId, 'sent')
+        window.setTimeout(() => setStatus(conversationId, messageId, 'delivered'), 500)
+        window.setTimeout(() => {
+          patchConversation(conversationId, (c) => ({
+            ...c,
+            typing: true,
+            messages: c.messages.map((m) => (m.from === 'buyer' && m.status !== 'failed' ? { ...m, status: 'read' } : m)),
+          }))
+        }, 1200)
+        window.setTimeout(() => {
+          const reply = sellerReplies[Math.floor(Math.random() * sellerReplies.length)]
+          let sellerId = ''
+          patchConversation(conversationId, (c) => {
+            sellerId = c.sellerId
+            return {
+              ...c,
+              typing: false,
+              unread: c.unread + 1,
+              messages: [...c.messages, { id: uid('msg'), from: 'seller', text: reply, at: Date.now() }],
+            }
+          })
+          const seller = getSeller(sellerId)
+          notify({ type: 'message', title: `New message from ${seller?.name ?? 'a seller'}`, body: reply, href: `/messages?c=${conversationId}` })
+        }, 2800)
+      }, 450)
     },
-    [],
+    [setStatus, patchConversation, notify],
+  )
+
+  const sendMessage = useCallback(
+    (conversationId: string, message: OutgoingMessage) => {
+      const id = uid('msg')
+      patchConversation(conversationId, (c) => ({
+        ...c,
+        messages: [...c.messages, { ...message, from: 'buyer', id, status: 'sending', at: Date.now() }],
+      }))
+      deliver(conversationId, id)
+    },
+    [patchConversation, deliver],
+  )
+
+  const retryMessage = useCallback(
+    (conversationId: string, messageId: string) => {
+      setStatus(conversationId, messageId, 'sending')
+      deliver(conversationId, messageId)
+    },
+    [setStatus, deliver],
   )
 
   const markRead = useCallback((conversationId: string) => {
@@ -324,8 +408,17 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
       } else {
         toast(`${seller?.name ?? 'Seller'} declined your offer`, { description: product?.name })
       }
+      notify({
+        type: 'offer',
+        title: status === 'accepted' ? `Offer accepted by ${seller?.name ?? 'seller'}` : `Offer declined by ${seller?.name ?? 'seller'}`,
+        body:
+          status === 'accepted'
+            ? `${product?.name ?? 'Your item'} is now ${formatPrice(offer.offerPrice)} for you. Add it to your cart to lock it in.`
+            : `${product?.name ?? 'Your item'} — you can send a new offer anytime.`,
+        href: '/offers',
+      })
     },
-    [pushMessage],
+    [pushMessage, notify],
   )
 
   const saveAddress: ShopContextValue['saveAddress'] = useCallback((input) => {
@@ -333,6 +426,14 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
     setAddresses((prev) => (prev.some((a) => a.id === address.id) ? prev.map((a) => (a.id === address.id ? address : a)) : [...prev, address]))
     setSelectedAddressId(address.id)
     return address
+  }, [])
+
+  const removeAddress = useCallback((id: string) => {
+    setAddresses((prev) => {
+      const next = prev.filter((a) => a.id !== id)
+      setSelectedAddressId((current) => (current === id ? (next[0]?.id ?? null) : current))
+      return next
+    })
   }, [])
 
   const placeOrder = useCallback(
@@ -361,9 +462,15 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
       }
       setOrders((prev) => [order, ...prev])
       setCart([])
+      notify({
+        type: 'order',
+        title: `Order ${order.id} placed`,
+        body: payment === 'transfer' ? 'We will confirm your order once your transfer is received.' : `Payment confirmed. Total ${formatPrice(order.total)}.`,
+        href: `/orders/${order.id}`,
+      })
       return order
     },
-    [addresses, selectedAddressId, cart, delivery, priceFor],
+    [addresses, selectedAddressId, cart, delivery, priceFor, notify],
   )
 
   const cartCount = cart.reduce((sum, i) => sum + i.quantity, 0)
@@ -372,15 +479,15 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
     () => ({
       cart, cartCount, wishlist, addToCart, updateQuantity, removeFromCart, toggleWishlist,
       priceFor, acceptedOfferFor, offers, submitOffer, respondToOffer,
-      conversations, openConversation, sendMessage, markRead,
-      addresses, saveAddress, selectedAddressId, setSelectedAddressId, delivery, setDelivery,
+      conversations, openConversation, sendMessage, retryMessage, markRead,
+      addresses, saveAddress, removeAddress, selectedAddressId, setSelectedAddressId, delivery, setDelivery,
       orders, placeOrder,
     }),
     [
       cart, cartCount, wishlist, addToCart, updateQuantity, removeFromCart, toggleWishlist,
       priceFor, acceptedOfferFor, offers, submitOffer, respondToOffer,
-      conversations, openConversation, sendMessage, markRead,
-      addresses, saveAddress, selectedAddressId, delivery, orders, placeOrder,
+      conversations, openConversation, sendMessage, retryMessage, markRead,
+      addresses, saveAddress, removeAddress, selectedAddressId, delivery, orders, placeOrder,
     ],
   )
 

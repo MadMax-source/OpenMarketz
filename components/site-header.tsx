@@ -4,7 +4,9 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Suspense } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { HandCoins, Heart, Menu, MessageCircle, Package, ShoppingBag, Store } from 'lucide-react'
+import { Bell, HandCoins, Heart, Menu, MessageCircle, Package, ShoppingBag, Store } from 'lucide-react'
+import { useNotifications } from '@/components/notifications-provider'
+import { AccountMenu } from '@/components/account/account-menu'
 import { categories } from '@/lib/data'
 import { useShop } from '@/components/shop-provider'
 import { SearchBar } from '@/components/search-bar'
@@ -16,6 +18,7 @@ export function SiteHeader() {
   const pathname = usePathname()
   const { cartCount, wishlist, offers, conversations } = useShop()
   const unread = conversations.reduce((sum, c) => sum + c.unread, 0)
+  const { unreadCount: unreadNotifications } = useNotifications()
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background/85 backdrop-blur-xl">
@@ -28,7 +31,7 @@ export function SiteHeader() {
             <Link href="#" className="transition-colors hover:text-background">
               Help center
             </Link>
-            <Link href="#" className="flex items-center gap-1.5 transition-colors hover:text-background">
+            <Link href="/sell" className="flex items-center gap-1.5 transition-colors hover:text-background">
               <Store className="size-3.5" />
               Sell on OpenMarketz
             </Link>
@@ -90,12 +93,16 @@ export function SiteHeader() {
           <HeaderIcon href="/messages" label="Messages" count={unread}>
             <MessageCircle className="size-5" />
           </HeaderIcon>
-          <HeaderIcon href="#" label="Wishlist" count={wishlist.size}>
+          <HeaderIcon href="/notifications" label="Notifications" count={unreadNotifications}>
+            <Bell className="size-5" />
+          </HeaderIcon>
+          <HeaderIcon href="/wishlist" label="Wishlist" count={wishlist.size}>
             <Heart className="size-5" />
           </HeaderIcon>
           <HeaderIcon href="/cart" label="Cart" count={cartCount}>
             <ShoppingBag className="size-5" />
           </HeaderIcon>
+          <AccountMenu />
         </div>
       </div>
 

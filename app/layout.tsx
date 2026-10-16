@@ -4,6 +4,9 @@ import { Inter, Bricolage_Grotesque } from 'next/font/google'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { ShopProvider } from '@/components/shop-provider'
+import { AuthProvider } from '@/components/auth-provider'
+import { NotificationsProvider } from '@/components/notifications-provider'
+import { WishlistProvider } from '@/components/wishlist-provider'
 import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
 
@@ -41,12 +44,18 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${display.variable}`}>
       <body className="flex min-h-dvh flex-col antialiased">
-        <ShopProvider>
-          <SiteHeader />
-          <main className="flex-1">{children}</main>
-          <SiteFooter />
-          <Toaster position="bottom-right" />
-        </ShopProvider>
+        <NotificationsProvider>
+          <AuthProvider>
+            <ShopProvider>
+              <WishlistProvider>
+                <SiteHeader />
+                <main className="flex-1">{children}</main>
+                <SiteFooter />
+                <Toaster position="bottom-right" />
+              </WishlistProvider>
+            </ShopProvider>
+          </AuthProvider>
+        </NotificationsProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>
