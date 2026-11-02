@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Bell, Heart, LayoutDashboard, LifeBuoy, LogOut, MapPin, MessageCircle, Package, ShieldCheck, Store, User as UserIcon } from 'lucide-react'
 import { initialsOf, useAuth } from '@/components/auth-provider'
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
 export function Avatar({ name, src, size = 'md' }: { name: string; src?: string; size?: 'sm' | 'md' | 'lg' }) {
@@ -50,10 +50,12 @@ export function AccountMenu() {
         <Avatar name={initialsOf(user)} src={user.avatarUrl} size="sm" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-60">
-        <DropdownMenuLabel className="flex flex-col">
-          <span className="truncate">{`${user.firstName} ${user.lastName}`}</span>
-          <span className="truncate text-xs font-normal text-muted-foreground">{user.email}</span>
-        </DropdownMenuLabel>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="flex flex-col">
+            <span className="truncate">{`${user.firstName} ${user.lastName}`}</span>
+            <span className="truncate text-xs font-normal text-muted-foreground">{user.email}</span>
+          </DropdownMenuLabel>
+        </DropdownMenuGroup>
         <DropdownMenuSeparator />
         {items.map(({ href, label, icon: Icon }) => (
           <DropdownMenuItem key={href} render={<Link href={href} />}>
